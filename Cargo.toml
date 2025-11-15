@@ -1,0 +1,30 @@
+[package]
+name = "raptor"
+version = "0.1.0"
+edition = "2024"
+description = "Realtime Abstracted Path Tree Observer"
+authors = ["Erick Jesus <erick.jesus2060@gmail.com>"]
+
+[dependencies]
+bytesize = "2.2.0"
+dirs = "6.0.0"
+macroquad = "0.4"
+
+[package.metadata.bundle]
+name = "raptor"
+identifier = "com.erickj3.raptor"
+category = "Utility"
+
+[package.metadata.bundle.osx]
+minimum_system_version = "10.11"
+
+[[bin]]
+name = "raptor"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = "s"
+codegen-units = 1
+lto = true
+panic = "abort"
+strip = true

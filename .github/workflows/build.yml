@@ -1,0 +1,106 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: "Create new release draft and build"
+        required: true
+        type: boolean
+        default: false
+
+jobs:
+  create-release:
+    name: Prepare and Get Version
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true' || startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version from Tag or Default
+        id: get-version
+        run: |
+          VERSION=""
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v} 
+          else
+            VERSION="0.0.0-manual-$(date +%s)"
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create Draft Release
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.get-version.outputs.version }}
+          name: Draft Release v${{ steps.get-version.outputs.version }}
+          body: |
+            ## Draft Release
+
+            Binaries generated via manual run.
+          draft: true
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    name: Build and Package ${{ matrix.os_label }}
+    needs: create-release
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            os_label: Linux
+          - os: windows-latest
+            os_label: Windows
+          - os: macos-latest
+            os_label: macOS
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-bundle
+        run: cargo install cargo-bundle
+
+      - name: Install Linux dependencies (for macroquad)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libudev-dev libfontconfig1-dev libxcb-randr0-dev
+
+      - name: Install WiX Toolset (for MSI bundle)
+        if: matrix.os == 'windows-latest'
+        run: |
+          choco install wix-toolset -y
+
+      - name: Bundle and Package
+        run: cargo bundle --release
+
+      - name: Bundle and Package
+        run: cargo bundle --release
+
+      - name: Upload Packages to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.create-release.outputs.version }}
+          files: target/release/bundle/**/*.*
+          draft: false
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
