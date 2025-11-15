@@ -5,6 +5,8 @@ use crate::camera::CameraController;
 use crate::config;
 use crate::filesystem::Navigator;
 use crate::input::{Command, MouseState};
+use crate::preview::Preview;
+use crate::preview::load::load_preview;
 use crate::render::ScanEffect;
 
 pub struct AppState {
@@ -14,6 +16,7 @@ pub struct AppState {
     pub scan_effect: ScanEffect,
     pub selected: Option<usize>,
     pub show_labels: bool,
+    pub preview: Preview,
 }
 
 impl AppState {
@@ -26,6 +29,7 @@ impl AppState {
             scan_effect: ScanEffect::new(),
             selected: None,
             show_labels: true,
+            preview: Preview::new(),
         }
     }
 
@@ -49,6 +53,15 @@ impl AppState {
                 self.execute_command(Command::EnterDirectory);
             } else {
                 self.selected = Some(clicked_idx);
+                if let Some(node) = self.navigator.entries.get(clicked_idx) {
+                    load_preview(
+                        &mut self.preview,
+                        &node.path,
+                        node.is_dir,
+                        node.size,
+                        &node.name,
+                    );
+                }
             }
         }
     }

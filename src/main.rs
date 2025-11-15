@@ -6,6 +6,7 @@ mod config;
 mod filesystem;
 mod input;
 mod math;
+mod preview;
 mod render;
 
 use app::AppState;
@@ -35,6 +36,10 @@ async fn main() {
         state.update();
 
         render_frame(&state);
+
+        use crate::preview::render::{PreviewLayout, render_preview};
+        render_preview(&state.preview.content, PreviewLayout::default());
+
         next_frame().await
     }
 }
