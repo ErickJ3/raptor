@@ -1,7 +1,7 @@
 use crate::config;
 use macroquad::prelude::*;
 
-pub fn draw_status_bar(labels_enabled: bool) {
+pub fn draw_status_bar(labels_enabled: bool, show_hidden: bool) {
     let panel_y = screen_height() - config::FOOTER_HEIGHT;
 
     draw_rectangle(
@@ -13,7 +13,7 @@ pub fn draw_status_bar(labels_enabled: bool) {
     );
 
     draw_text(
-        "NAV: h  j  k  l  |  o/ENTER: Open  |  u/-: Parent  |  /: Root  |  TAB: Labels",
+        "NAV: h j k l  |  o/ENTER: Open  |  .: Hidden  |  u/-: Parent  |  /: Root  |  TAB: Labels",
         20.0,
         panel_y + 20.0,
         14.0,
@@ -29,11 +29,12 @@ pub fn draw_status_bar(labels_enabled: bool) {
     );
 
     let status = format!(
-        "FPS: {} | Labels: {}",
+        "FPS: {} | Labels: {} | Hidden: {}",
         get_fps(),
-        if labels_enabled { "ON" } else { "OFF" }
+        if labels_enabled { "ON" } else { "OFF" },
+        if show_hidden { "ON" } else { "OFF" },
     );
-    
+
     draw_text(
         &status,
         20.0,

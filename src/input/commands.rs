@@ -12,6 +12,7 @@ pub enum Command {
     GoToRoot,
     GoHome,
     ToggleLabels,
+    ToggleHidden,
     Select(usize),
     ClearSelection,
 }

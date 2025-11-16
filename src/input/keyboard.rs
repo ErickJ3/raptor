@@ -60,6 +60,10 @@ impl KeyboardHandler {
             commands.push(Command::GoToLast);
         }
 
+        if is_key_pressed(KeyCode::Period) {
+            commands.push(Command::ToggleHidden);
+        }
+
         if is_key_pressed(KeyCode::Tab) {
             commands.push(Command::ToggleLabels);
         }

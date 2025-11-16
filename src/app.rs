@@ -14,6 +14,7 @@ pub struct AppState {
     pub scan_effect: ScanEffect,
     pub selected: Option<usize>,
     pub show_labels: bool,
+    pub show_hidden: bool,
 }
 
 impl AppState {
@@ -26,6 +27,7 @@ impl AppState {
             scan_effect: ScanEffect::new(),
             selected: None,
             show_labels: true,
+            show_hidden: false,
         }
     }
 
@@ -101,6 +103,12 @@ impl AppState {
 
             Command::GoHome => {
                 self.navigator.go_home();
+                self.on_directory_changed();
+            }
+
+            Command::ToggleHidden => {
+                self.navigator.show_hidden = !self.navigator.show_hidden;
+                self.navigator.load(&self.navigator.current_path.clone());
                 self.on_directory_changed();
             }
 

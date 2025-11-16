@@ -7,11 +7,22 @@ pub struct DirectoryContents {
     pub grid_width: i32,
 }
 
-pub fn load_directory(path: &PathBuf) -> Result<DirectoryContents, std::io::Error> {
+pub fn load_directory(
+    path: &PathBuf,
+    show_hidden: bool,
+) -> Result<DirectoryContents, std::io::Error> {
     let read_dir = fs::read_dir(path)?;
+
+    println!("{}", show_hidden);
 
     let mut nodes: Vec<FileNode> = read_dir
         .filter_map(|entry| entry.ok())
+        .filter(|entry| {
+            if !show_hidden {
+                return !entry.file_name().to_string_lossy().starts_with(".");
+            }
+            true
+        })
         .filter_map(|entry| {
             let metadata = entry.metadata().ok()?;
             let is_dir = metadata.is_dir();

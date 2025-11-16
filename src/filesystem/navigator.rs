@@ -1,11 +1,12 @@
-use std::path::PathBuf;
 use super::{loader, node::FileNode};
+use std::path::PathBuf;
 
 pub struct Navigator {
     pub current_path: PathBuf,
     pub entries: Vec<FileNode>,
     pub grid_width: i32,
     pub history: Vec<PathBuf>,
+    pub show_hidden: bool,
 }
 
 impl Navigator {
@@ -15,6 +16,7 @@ impl Navigator {
             entries: vec![],
             grid_width: 1,
             history: vec![],
+            show_hidden: false,
         };
         nav.load(&initial_path);
         nav
@@ -24,7 +26,7 @@ impl Navigator {
         self.current_path = path.clone();
         self.entries.clear();
 
-        if let Ok(contents) = loader::load_directory(path) {
+        if let Ok(contents) = loader::load_directory(path, self.show_hidden) {
             self.entries = contents.nodes;
             self.grid_width = contents.grid_width;
         }
