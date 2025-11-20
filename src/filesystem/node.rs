@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use crate::config;
+use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
 pub struct FileNode {
@@ -35,8 +35,7 @@ impl FileNode {
                 + config::DIR_HEIGHT_BASE
         } else {
             ((self.size as f32).log10() * config::FILE_HEIGHT_LOG_SCALE)
-                .max(config::MIN_BLOCK_HEIGHT)
-                .min(config::MAX_BLOCK_HEIGHT)
+                .clamp(config::MIN_BLOCK_HEIGHT, config::MAX_BLOCK_HEIGHT)
         }
     }
 
@@ -66,10 +65,6 @@ impl FileNode {
     }
 
     pub fn type_display(&self) -> &'static str {
-        if self.is_dir {
-            "DIR"
-        } else {
-            "FILE"
-        }
+        if self.is_dir { "DIR" } else { "FILE" }
     }
 }

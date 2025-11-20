@@ -44,6 +44,13 @@ pub const TEXT_WARNING: Color = Color::new(1.0, 1.0, 0.0, 0.9);
 pub const SCAN_SPEED: f32 = 20.0;
 pub const SCAN_MAX_HEIGHT: f32 = 30.0;
 
+pub const HEADER_FONT_SIZE: f32 = 20.0;
+pub const INFO_FONT_SIZE: f32 = 14.0;
+pub const INFO_LINE_SPACING: f32 = 1.14;
+pub const LABEL_FONT_SIZE: f32 = 12.0;
+pub const LABEL_FOCUSED_FONT_SIZE: f32 = 16.0;
+pub const STATUS_FPS: bool = true;
+
 pub const HEADER_HEIGHT: f32 = 50.0;
 pub const BREADCRUMB_HEIGHT: f32 = 25.0;
 pub const FOOTER_HEIGHT: f32 = 80.0;

@@ -69,12 +69,12 @@ impl Navigator {
     }
 
     pub fn enter_directory(&mut self, index: usize) -> bool {
-        if let Some(node) = self.entries.get(index) {
-            if node.is_dir {
-                let path = node.path.clone();
-                self.navigate_to(&path);
-                return true;
-            }
+        if let Some(node) = self.entries.get(index)
+            && node.is_dir
+        {
+            let path = node.path.clone();
+            self.navigate_to(&path);
+            return true;
         }
         false
     }

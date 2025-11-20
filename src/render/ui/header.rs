@@ -11,7 +11,13 @@ pub fn draw_header(current_path: &PathBuf, total_nodes: usize, grid_width: i32, 
         config::UI_PANEL_COLOR,
     );
 
-    draw_text("LOCATION: ", 20.0, 30.0, 20.0, config::TEXT_SECONDARY);
+    draw_text(
+        "LOCATION: ",
+        20.0,
+        30.0,
+        config::HEADER_FONT_SIZE,
+        config::TEXT_SECONDARY,
+    );
 
     let path_str = current_path.display().to_string();
     let truncated_path = if path_str.len() > 60 {
@@ -20,18 +26,25 @@ pub fn draw_header(current_path: &PathBuf, total_nodes: usize, grid_width: i32, 
         path_str
     };
 
-    draw_text(&truncated_path, 130.0, 30.0, 20.0, config::TEXT_PRIMARY);
+    draw_text(
+        &truncated_path,
+        130.0,
+        30.0,
+        config::HEADER_FONT_SIZE,
+        config::TEXT_PRIMARY,
+    );
 
     let stats = format!(
         "NODES: {}  |  GRID: {}x{}",
         total_nodes, grid_width, grid_height
     );
-    let stats_width = measure_text(&stats, None, 16, 1.0).width;
+    let stats_width =
+        measure_text(&stats, None, config::HEADER_FONT_SIZE.round() as u16, 1.0).width;
     draw_text(
         &stats,
         screen_width() - stats_width - 20.0,
         30.0,
-        16.0,
+        config::HEADER_FONT_SIZE,
         config::TEXT_SECONDARY,
     );
 }

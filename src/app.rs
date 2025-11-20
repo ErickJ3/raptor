@@ -77,10 +77,10 @@ impl AppState {
             }
 
             Command::EnterDirectory => {
-                if let Some(idx) = self.selected {
-                    if self.navigator.enter_directory(idx) {
-                        self.on_directory_changed();
-                    }
+                if let Some(idx) = self.selected
+                    && self.navigator.enter_directory(idx)
+                {
+                    self.on_directory_changed();
                 }
             }
 
@@ -153,14 +153,14 @@ impl AppState {
     }
 
     fn focus_camera_on_selection(&mut self) {
-        if let Some(idx) = self.selected {
-            if let Some(node) = self.navigator.entries.get(idx) {
-                self.camera.set_target(Vec3::new(
-                    node.grid_pos.0 as f32 * config::GRID_SPACING,
-                    0.0,
-                    node.grid_pos.1 as f32 * config::GRID_SPACING,
-                ));
-            }
+        if let Some(idx) = self.selected
+            && let Some(node) = self.navigator.entries.get(idx)
+        {
+            self.camera.set_target(Vec3::new(
+                node.grid_pos.0 as f32 * config::GRID_SPACING,
+                0.0,
+                node.grid_pos.1 as f32 * config::GRID_SPACING,
+            ));
         }
     }
 

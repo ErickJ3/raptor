@@ -64,10 +64,10 @@ impl MouseState {
                 config::BLOCK_DEPTH / 2.0,
             );
 
-            if let Some(dist) = ray_box_intersection(&ray, pos, half_size) {
-                if closest.is_none() || dist < closest.unwrap().1 {
-                    closest = Some((i, dist));
-                }
+            if let Some(dist) = ray_box_intersection(&ray, pos, half_size)
+                && (closest.is_none() || dist < closest.unwrap().1)
+            {
+                closest = Some((i, dist));
             }
         }
 

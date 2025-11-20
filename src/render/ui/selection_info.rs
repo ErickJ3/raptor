@@ -23,8 +23,8 @@ pub fn draw_selection_info(node: &FileNode) {
 
     let line3 = format!("PATH: {}", node.path.to_string_lossy());
 
-    let font_size = 14.0;
-    let line_spacing = 16.0;
+    let font_size = config::INFO_FONT_SIZE;
+    let line_spacing = config::INFO_LINE_SPACING * config::INFO_FONT_SIZE;
 
     let right_offset = 20.0;
     let x_pos = screen_width() - right_offset;

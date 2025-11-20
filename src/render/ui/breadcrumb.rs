@@ -22,7 +22,13 @@ pub fn draw_breadcrumb(
     let text_y = y_pos + 17.0;
 
     if has_parent {
-        draw_text("[U/-]", x_pos, text_y, 14.0, config::TEXT_WARNING);
+        draw_text(
+            "[U/-]",
+            x_pos,
+            text_y,
+            config::INFO_FONT_SIZE,
+            config::TEXT_WARNING,
+        );
         x_pos += 70.0;
     }
 
@@ -37,22 +43,29 @@ pub fn draw_breadcrumb(
             Color::new(0.0, 0.83, 1.0, 0.8)
         };
 
-        draw_text(&display, x_pos, text_y, 14.0, color);
-        x_pos += measure_text(&display, None, 14, 1.0).width + 2.0;
+        draw_text(&display, x_pos, text_y, config::INFO_FONT_SIZE, color);
+        x_pos +=
+            measure_text(&display, None, config::INFO_FONT_SIZE.round() as u16, 1.0).width + 2.0;
 
         if x_pos > screen_width() - 200.0 {
-            draw_text("...", x_pos, text_y, 14.0, color);
+            draw_text("...", x_pos, text_y, config::INFO_FONT_SIZE, color);
             break;
         }
     }
 
     let children_info = format!("{} dirs | {} files", dir_count, file_count);
-    let info_width = measure_text(&children_info, None, 12, 1.0).width;
+    let info_width = measure_text(
+        &children_info,
+        None,
+        config::LABEL_FONT_SIZE.round() as u16,
+        1.0,
+    )
+    .width;
     draw_text(
         &children_info,
         screen_width() - info_width - 20.0,
         text_y,
-        12.0,
+        config::LABEL_FONT_SIZE,
         Color::new(0.0, 1.0, 0.25, 0.7),
     );
 }

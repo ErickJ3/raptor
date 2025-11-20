@@ -17,17 +17,16 @@ pub fn draw_labels(
             node.grid_pos.1 as f32 * config::GRID_SPACING,
         );
 
-        if let Some(screen_pos) = world_to_screen(world_pos, camera) {
-            if screen_pos.x > 0.0
-                && screen_pos.x < screen_width()
-                && screen_pos.y > 0.0
-                && screen_pos.y < screen_height()
-            {
-                let is_selected = selected_index == Some(i);
-                let is_hovered = hover_index == Some(i);
+        if let Some(screen_pos) = world_to_screen(world_pos, camera)
+            && screen_pos.x > 0.0
+            && screen_pos.x < screen_width()
+            && screen_pos.y > 0.0
+            && screen_pos.y < screen_height()
+        {
+            let is_selected = selected_index == Some(i);
+            let is_hovered = hover_index == Some(i);
 
-                draw_single_label(node, screen_pos, is_selected, is_hovered);
-            }
+            draw_single_label(node, screen_pos, is_selected, is_hovered);
         }
     }
 }
@@ -35,9 +34,9 @@ pub fn draw_labels(
 fn draw_single_label(node: &FileNode, screen_pos: Vec2, is_selected: bool, is_hovered: bool) {
     let display_name = node.display_name(config::LABEL_MAX_LENGTH);
     let font_size = if is_selected || is_hovered {
-        16.0
+        config::LABEL_FOCUSED_FONT_SIZE
     } else {
-        12.0
+        config::LABEL_FONT_SIZE
     };
 
     let text_size = measure_text(&display_name, None, font_size as u16, 1.0);
@@ -77,7 +76,7 @@ fn draw_single_label(node: &FileNode, screen_pos: Vec2, is_selected: bool, is_ho
     if node.is_dir {
         draw_text(
             "[]",
-            screen_pos.x - text_size.width / 2.0 - 12.0,
+            screen_pos.x - text_size.width / 2.0 - config::LABEL_FONT_SIZE,
             screen_pos.y,
             font_size,
             config::TEXT_WARNING,

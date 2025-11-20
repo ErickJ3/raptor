@@ -53,9 +53,9 @@ fn render_ui(state: &AppState) {
 
     ui::draw_status_bar(state.show_labels, state.show_hidden);
 
-    if let Some(idx) = state.selected {
-        if let Some(node) = state.navigator.entries.get(idx) {
-            ui::draw_selection_info(node);
-        }
+    if let Some(idx) = state.selected
+        && let Some(node) = state.navigator.entries.get(idx)
+    {
+        ui::draw_selection_info(node);
     }
 }
