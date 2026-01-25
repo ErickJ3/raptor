@@ -5,7 +5,10 @@ use macroquad::prelude::*;
 
 pub fn render_frame(state: &AppState) {
     clear_background(config::BACKGROUND_COLOR);
+    render_normal(state);
+}
 
+fn render_normal(state: &AppState) {
     let camera = state.camera.to_camera3d();
 
     set_camera(&camera);
@@ -15,6 +18,7 @@ pub fn render_frame(state: &AppState) {
         &state.navigator.entries,
         state.selected,
         state.mouse.hover_index,
+        state.dir_height_by_size,
     );
     state.scan_effect.draw();
 
@@ -26,14 +30,21 @@ pub fn render_frame(state: &AppState) {
             state.selected,
             state.mouse.hover_index,
             &camera,
+            state.dir_height_by_size,
         );
     }
 
     render_ui(state);
 
+    if let Some(ref scanning) = state.scanning {
+        let panel_y = screen_height() - config::FOOTER_HEIGHT;
+        draw_text(&scanning.progress_text, 20.0, panel_y + 80.0, config::LABEL_FONT_SIZE, config::TEXT_HIGHLIGHT);
+    }
+
     effects::draw_scanlines();
     effects::draw_vignette();
 }
+
 
 fn render_ui(state: &AppState) {
     ui::draw_header(
@@ -51,11 +62,11 @@ fn render_ui(state: &AppState) {
         file_count,
     );
 
-    ui::draw_status_bar(state.show_labels, state.show_hidden);
+    ui::draw_status_bar(state.show_labels, state.show_hidden, state.deep_scan, state.dir_height_by_size);
 
     if let Some(idx) = state.selected
         && let Some(node) = state.navigator.entries.get(idx)
     {
-        ui::draw_selection_info(node);
+        ui::draw_selection_info(node, state.dir_height_by_size);
     }
 }

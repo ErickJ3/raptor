@@ -20,11 +20,13 @@ pub const GRID_SIZE: i32 = 20;
 
 pub const BLOCK_WIDTH: f32 = 2.0;
 pub const BLOCK_DEPTH: f32 = 2.0;
-pub const MIN_BLOCK_HEIGHT: f32 = 0.5;
-pub const MAX_BLOCK_HEIGHT: f32 = 3.0;
+pub const MIN_BLOCK_HEIGHT: f32 = 0.01; // 1 pixel equivalent (0.01 units ~ 1 pixel at typical zoom)
+pub const MAX_BLOCK_HEIGHT: f32 = 15.0; // Larger to show max zoom range
 pub const DIR_HEIGHT_MULTIPLIER: f32 = 0.5;
 pub const DIR_HEIGHT_BASE: f32 = 1.0;
 pub const FILE_HEIGHT_LOG_SCALE: f32 = 0.3;
+pub const SIZE_HEIGHT_SCALE: f32 = 1e-8; // Linear scale: height = size * this factor
+pub const SIZE_ANIMATION_SPEED: f32 = 0.15; // Lerp factor per frame (0-1, higher = faster)
 
 pub const BACKGROUND_COLOR: Color = Color::new(0.02, 0.02, 0.02, 1.0);
 pub const GRID_COLOR: Color = Color::new(0.0, 1.0, 0.25, 0.15);
@@ -53,7 +55,7 @@ pub const STATUS_FPS: bool = true;
 
 pub const HEADER_HEIGHT: f32 = 50.0;
 pub const BREADCRUMB_HEIGHT: f32 = 25.0;
-pub const FOOTER_HEIGHT: f32 = 80.0;
+pub const FOOTER_HEIGHT: f32 = 100.0;
 pub const LABEL_MAX_LENGTH: usize = 12;
 
 pub const VIGNETTE_ALPHA: f32 = 0.2;

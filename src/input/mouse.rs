@@ -22,10 +22,10 @@ impl MouseState {
         }
     }
 
-    pub fn update(&mut self, entries: &[FileNode], camera: &Camera3D) {
+    pub fn update(&mut self, entries: &[FileNode], camera: &Camera3D, dir_height_by_size: bool) {
         let mouse_pos = mouse_position();
 
-        self.hover_index = Self::raycast_blocks(entries, mouse_pos, camera);
+        self.hover_index = Self::raycast_blocks(entries, mouse_pos, camera, dir_height_by_size);
         self.is_dragging = is_mouse_button_down(MouseButton::Right);
         self.drag_delta = if self.is_dragging {
             mouse_delta_position() * 100.0
@@ -45,13 +45,21 @@ impl MouseState {
         entries: &[FileNode],
         screen_pos: (f32, f32),
         camera: &Camera3D,
+        dir_height_by_size: bool,
     ) -> Option<usize> {
         let ray = Ray::from_camera(Vec2::new(screen_pos.0, screen_pos.1), camera);
+
+        // Calculate max size for normalization
+        let max_size = entries
+            .iter()
+            .map(|node| node.size)
+            .max()
+            .unwrap_or(0);
 
         let mut closest: Option<(usize, f32)> = None;
 
         for (i, node) in entries.iter().enumerate() {
-            let height = node.calculate_height();
+            let height = node.calculate_height_normalized(dir_height_by_size, max_size);
             let pos = Vec3::new(
                 node.grid_pos.0 as f32 * config::GRID_SPACING,
                 height / 2.0,

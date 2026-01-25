@@ -9,6 +9,7 @@ authors = ["Erick Jesus <erick.jesus2060@gmail.com>"]
 bytesize = "2.2.0"
 dirs = "6.0.0"
 macroquad = "0.4"
+walkdir = "2.4"
 
 [package.metadata.bundle]
 name = "raptor"

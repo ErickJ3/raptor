@@ -7,6 +7,7 @@ pub struct Navigator {
     pub grid_width: i32,
     pub history: Vec<PathBuf>,
     pub show_hidden: bool,
+    pub deep_scan: bool,
 }
 
 impl Navigator {
@@ -17,16 +18,17 @@ impl Navigator {
             grid_width: 1,
             history: vec![],
             show_hidden: false,
+            deep_scan: false,
         };
-        nav.load(&initial_path);
+        nav.load(&initial_path, None);
         nav
     }
 
-    pub fn load(&mut self, path: &PathBuf) {
+    pub fn load(&mut self, path: &PathBuf, max_depth: Option<usize>) {
         self.current_path = path.clone();
         self.entries.clear();
 
-        if let Ok(contents) = loader::load_directory(path, self.show_hidden) {
+        if let Ok(contents) = loader::load_directory(path, self.show_hidden, self.deep_scan, max_depth) {
             self.entries = contents.nodes;
             self.grid_width = contents.grid_width;
         }
@@ -34,15 +36,15 @@ impl Navigator {
 
     pub fn navigate_to(&mut self, path: &PathBuf) {
         self.history.push(self.current_path.clone());
-        self.load(path);
+        self.load(path, None);
     }
 
     pub fn go_back(&mut self) -> bool {
         if let Some(prev_path) = self.history.pop() {
-            self.load(&prev_path);
+            self.load(&prev_path, None);
             true
         } else if let Some(parent) = self.current_path.parent() {
-            self.load(&parent.to_path_buf());
+            self.load(&parent.to_path_buf(), None);
             true
         } else {
             false
@@ -64,7 +66,7 @@ impl Navigator {
 
     pub fn go_home(&mut self) {
         let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("/"));
-        self.load(&home);
+        self.load(&home, None);
         self.history.clear();
     }
 

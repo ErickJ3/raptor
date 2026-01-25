@@ -1,7 +1,7 @@
 use crate::config;
 use macroquad::prelude::*;
 
-pub fn draw_status_bar(labels_enabled: bool, show_hidden: bool) {
+pub fn draw_status_bar(labels_enabled: bool, show_hidden: bool, deep_scan: bool, dir_height_by_size: bool) {
     let panel_y = screen_height() - config::FOOTER_HEIGHT;
 
     draw_rectangle(
@@ -13,7 +13,7 @@ pub fn draw_status_bar(labels_enabled: bool, show_hidden: bool) {
     );
 
     draw_text(
-        "NAV: h j k l  |  o/ENTER: Open  |  .: Hidden  |  u/-: Parent  |  /: Root  |  TAB: Labels",
+        "NAV: h j k l  |  o/ENTER: Open  |  .: Hidden  |  u/-: Parent  |  /: Root  |  TAB: Labels  |  d: Deep Scan  |  s: Height on file number or size",
         20.0,
         panel_y + 20.0,
         config::LABEL_FONT_SIZE,
@@ -29,9 +29,11 @@ pub fn draw_status_bar(labels_enabled: bool, show_hidden: bool) {
     );
 
     let mut status = format!(
-        "Labels: {} | Hidden: {}",
+        "Labels: {} | Hidden: {} | Deep Scan: {} | Height: {}",
         if labels_enabled { "ON" } else { "OFF" },
         if show_hidden { "ON" } else { "OFF" },
+        if deep_scan { "ON" } else { "OFF" },
+        if dir_height_by_size { "Size" } else { "Children" },
     );
 
     if config::STATUS_FPS {

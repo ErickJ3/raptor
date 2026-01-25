@@ -1,15 +1,73 @@
 use super::node::FileNode;
 use std::fs;
 use std::path::PathBuf;
+use walkdir::WalkDir;
 
 pub struct DirectoryContents {
     pub nodes: Vec<FileNode>,
     pub grid_width: i32,
 }
 
+#[cfg(target_os = "windows")]
+fn is_hidden(entry: &fs::DirEntry) -> bool {
+    use std::os::windows::fs::MetadataExt;
+    entry.metadata()
+        .map(|m| m.file_attributes() & 0x02 != 0)
+        .unwrap_or(false)
+}
+
+#[cfg(not(target_os = "windows"))]
+fn is_hidden(entry: &fs::DirEntry) -> bool {
+    entry.file_name().to_string_lossy().starts_with(".")
+}
+
+#[cfg(target_os = "macos")]
+fn is_macos_package(path: &PathBuf) -> bool {
+    // Check if path ends with known macOS package extensions
+    match path.extension() {
+        Some(ext) => {
+            let ext_str = ext.to_string_lossy().to_lowercase();
+            matches!(ext_str.as_str(), 
+                "app" | "framework" | "bundle" | "plugin" | "wdgt" | 
+                "action" | "mdimporter" | "prefpane" | "qlgenerator" | 
+                "saver" | "colorpicker" | "scriptSuite" | "scriptTerminology")
+        }
+        None => false,
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn is_macos_package(_path: &PathBuf) -> bool {
+    false
+}
+
+fn calculate_directory_size(path: &PathBuf, max_depth: Option<usize>, current_depth: usize) -> u64 {
+    // On macOS, skip deep traversal of packages and use faster approximate size
+    #[cfg(target_os = "macos")]
+    if is_macos_package(path) {
+        // Use du command or allocatedFileSize for faster package scanning
+        if let Ok(metadata) = fs::metadata(path) {
+            return metadata.len();
+        }
+    }
+    
+    let max_depth_for_walk = max_depth.map(|d| d.saturating_sub(current_depth));
+    
+    WalkDir::new(path)
+        .max_depth(max_depth_for_walk.unwrap_or(usize::MAX))
+        .into_iter()
+        .filter_map(|entry| entry.ok())
+        .filter_map(|entry| entry.metadata().ok())
+        .filter(|metadata| metadata.is_file())
+        .map(|metadata| metadata.len())
+        .sum()
+}
+
 pub fn load_directory(
     path: &PathBuf,
     show_hidden: bool,
+    deep_scan: bool,
+    max_depth: Option<usize>,
 ) -> Result<DirectoryContents, std::io::Error> {
     let read_dir = fs::read_dir(path)?;
 
@@ -17,14 +75,22 @@ pub fn load_directory(
         .filter_map(|entry| entry.ok())
         .filter(|entry| {
             if !show_hidden {
-                return !entry.file_name().to_string_lossy().starts_with(".");
+                return !is_hidden(entry);
             }
             true
         })
         .filter_map(|entry| {
             let metadata = entry.metadata().ok()?;
             let is_dir = metadata.is_dir();
-            let size = if is_dir { 0 } else { metadata.len() };
+            let size = if is_dir {
+                if deep_scan {
+                    calculate_directory_size(&entry.path(), max_depth, 1)
+                } else {
+                    0
+                }
+            } else {
+                metadata.len()
+            };
             let children_count = if is_dir {
                 fs::read_dir(entry.path()).map(|d| d.count()).unwrap_or(0)
             } else {

@@ -68,6 +68,14 @@ impl KeyboardHandler {
             commands.push(Command::ToggleLabels);
         }
 
+        if is_key_pressed(KeyCode::D) {
+            commands.push(Command::ToggleDeepScan);
+        }
+
+        if is_key_pressed(KeyCode::S) {
+            commands.push(Command::ToggleDirHeightMode);
+        }
+
         commands
     }
 }

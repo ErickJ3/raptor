@@ -13,6 +13,8 @@ pub enum Command {
     GoHome,
     ToggleLabels,
     ToggleHidden,
+    ToggleDeepScan,
+    ToggleDirHeightMode,
     Select(usize),
     ClearSelection,
 }

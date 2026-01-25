@@ -18,10 +18,16 @@ pub fn get_block_color(node: &FileNode, is_selected: bool, is_hovered: bool) -> 
     }
 }
 
-pub fn draw_block(node: &FileNode, is_selected: bool, is_hovered: bool) {
-    let height = node.calculate_height();
+pub fn draw_block(node: &FileNode, is_selected: bool, is_hovered: bool, dir_height_by_size: bool, max_size: u64) {
+    let height = node.calculate_height_normalized(dir_height_by_size, max_size);
     let color = get_block_color(node, is_selected, is_hovered);
-    let pos = node.world_position();
+    
+    // Position block with bottom at ground level (y=0), centered at height/2
+    let pos = Vec3::new(
+        node.grid_pos.0 as f32 * config::GRID_SPACING,
+        height / 2.0,
+        node.grid_pos.1 as f32 * config::GRID_SPACING,
+    );
 
     draw_cube(
         pos,
@@ -56,10 +62,18 @@ pub fn draw_all_blocks(
     entries: &[FileNode],
     selected_index: Option<usize>,
     hover_index: Option<usize>,
+    dir_height_by_size: bool,
 ) {
+    // Calculate max size for normalization
+    let max_size = entries
+        .iter()
+        .map(|node| node.size)
+        .max()
+        .unwrap_or(0);
+
     for (i, node) in entries.iter().enumerate() {
         let is_selected = selected_index == Some(i);
         let is_hovered = hover_index == Some(i);
-        draw_block(node, is_selected, is_hovered);
+        draw_block(node, is_selected, is_hovered, dir_height_by_size, max_size);
     }
 }

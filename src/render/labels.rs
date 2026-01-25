@@ -8,9 +8,17 @@ pub fn draw_labels(
     selected_index: Option<usize>,
     hover_index: Option<usize>,
     camera: &Camera3D,
+    dir_height_by_size: bool,
 ) {
+    // Calculate max size for normalization
+    let max_size = entries
+        .iter()
+        .map(|node| node.size)
+        .max()
+        .unwrap_or(0);
+
     for (i, node) in entries.iter().enumerate() {
-        let height = node.calculate_height();
+        let height = node.calculate_height_normalized(dir_height_by_size, max_size);
         let world_pos = Vec3::new(
             node.grid_pos.0 as f32 * config::GRID_SPACING,
             height + 0.5,

@@ -1,16 +1,18 @@
 use crate::config;
 use crate::filesystem::FileNode;
+use bytesize::ByteSize;
 use macroquad::prelude::*;
 
-pub fn draw_selection_info(node: &FileNode) {
+pub fn draw_selection_info(node: &FileNode, dir_height_by_size: bool) {
     let panel_y = screen_height() - config::FOOTER_HEIGHT;
 
     let line1 = format!("SELECTED: {} | TYPE: {}", node.name, node.type_display(),);
 
     let line2 = if node.is_dir {
         format!(
-            "CONTENTS: {} items | POS: ({}, {})",
-            node.children_count, node.grid_pos.0, node.grid_pos.1
+            "CONTENTS: {} items | SIZE: {} | POS: ({}, {})",
+            node.children_count, ByteSize(node.size).to_string(),
+            node.grid_pos.0, node.grid_pos.1
         )
     } else {
         format!(
@@ -44,6 +46,6 @@ pub fn draw_selection_info(node: &FileNode) {
     draw_right_aligned(&line2, line_spacing);
     draw_right_aligned(&line3, line_spacing * 2.0);
 
-    let line4 = format!("BLOCK HEIGHT: {:.2}", node.calculate_height());
+    let line4 = format!("BLOCK HEIGHT: {:.2}", node.calculate_height(dir_height_by_size));
     draw_right_aligned(&line4, line_spacing * 3.0);
 }
