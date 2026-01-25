@@ -39,7 +39,6 @@ fn is_zfs_snapshot_dir(entry: &fs::DirEntry) -> bool {
     }
     false
 }
-}
 
 #[cfg(target_os = "macos")]
 fn is_macos_package(path: &PathBuf) -> bool {

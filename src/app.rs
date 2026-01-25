@@ -246,7 +246,22 @@ impl AppState {
         let current_node = &self.navigator.entries[current_idx];
         let (cx, cz) = current_node.grid_pos;
 
-        let target_pos = (cx + dx, cz + dz);
+        // Make movement relative to camera yaw
+        // Camera forward direction: (-cos(yaw), -sin(yaw))
+        // Camera right direction: (-sin(yaw), cos(yaw))
+        // world_movement = -dx * right + (-dz) * forward
+        let camera_yaw = self.camera.yaw;
+        let dx_f = dx as f32;
+        let dz_f = dz as f32;
+        let sin_yaw = camera_yaw.sin();
+        let cos_yaw = camera_yaw.cos();
+        
+        let rel_dx = dx_f * sin_yaw + dz_f * cos_yaw;
+        let rel_dz = -dx_f * cos_yaw + dz_f * sin_yaw;
+        let rel_dx = rel_dx.round() as i32;
+        let rel_dz = rel_dz.round() as i32;
+
+        let target_pos = (cx + rel_dx, cz + rel_dz);
 
         if let Some(new_idx) = self.navigator.find_node_at_grid_pos(target_pos) {
             self.selected = Some(new_idx);
