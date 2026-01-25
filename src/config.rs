@@ -24,7 +24,6 @@ pub const MIN_BLOCK_HEIGHT: f32 = 0.01; // 1 pixel equivalent (0.01 units ~ 1 pi
 pub const MAX_BLOCK_HEIGHT: f32 = 15.0; // Larger to show max zoom range
 pub const DIR_HEIGHT_MULTIPLIER: f32 = 0.5;
 pub const DIR_HEIGHT_BASE: f32 = 1.0;
-pub const FILE_HEIGHT_LOG_SCALE: f32 = 0.3;
 pub const SIZE_HEIGHT_SCALE: f32 = 1e-8; // Linear scale: height = size * this factor
 pub const SIZE_ANIMATION_SPEED: f32 = 0.15; // Lerp factor per frame (0-1, higher = faster)
 

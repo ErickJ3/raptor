@@ -21,6 +21,26 @@ fn is_hidden(entry: &fs::DirEntry) -> bool {
     entry.file_name().to_string_lossy().starts_with(".")
 }
 
+fn is_zfs_snapshot_dir(entry: &fs::DirEntry) -> bool {
+    // Ignore well-known ZFS snapshot directories
+    if !entry.file_type().map(|ft| ft.is_dir()).unwrap_or(false) {
+        return false;
+    }
+    let name = entry.file_name();
+    let name = name.to_string_lossy();
+    if name == "@Recently-Snapshot"
+        || name == "@auto" || name == "@daily" || name == "@weekly" || name == "@monthly"
+        || name == "@yearly" || name == "@manual" || name == "@tmp"
+        || name == ".zfs"
+        || name.starts_with("@-")
+        || (name.starts_with("@") && name.len() > 1 && name.chars().nth(1).map_or(false, |c| c.is_ascii_digit()))
+    {
+        return true;
+    }
+    false
+}
+}
+
 #[cfg(target_os = "macos")]
 fn is_macos_package(path: &PathBuf) -> bool {
     // Check if path ends with known macOS package extensions
@@ -57,6 +77,21 @@ fn calculate_directory_size(path: &PathBuf, max_depth: Option<usize>, current_de
         .max_depth(max_depth_for_walk.unwrap_or(usize::MAX))
         .into_iter()
         .filter_map(|entry| entry.ok())
+        .filter(|entry| {
+            // Skip well-known ZFS snapshot directories
+            let name = entry.file_name().to_string_lossy();
+            if entry.file_type().is_dir() && (
+                name == "@Recently-Snapshot"
+                || name == "@auto" || name == "@daily" || name == "@weekly" || name == "@monthly"
+                || name == "@yearly" || name == "@manual" || name == "@tmp"
+                || name == ".zfs"
+                || name.starts_with("@-")
+                || (name.starts_with("@") && name.len() > 1 && name.chars().nth(1).map_or(false, |c| c.is_ascii_digit()))
+            ) {
+                return false;
+            }
+            true
+        })
         .filter_map(|entry| entry.metadata().ok())
         .filter(|metadata| metadata.is_file())
         .map(|metadata| metadata.len())
@@ -79,6 +114,7 @@ pub fn load_directory(
             }
             true
         })
+        .filter(|entry| !is_zfs_snapshot_dir(entry))
         .filter_map(|entry| {
             let metadata = entry.metadata().ok()?;
             let is_dir = metadata.is_dir();

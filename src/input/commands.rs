@@ -1,5 +1,7 @@
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Command {
+        Select(usize),
+        ClearSelection,
     MoveLeft,
     MoveRight,
     MoveUp,
@@ -15,6 +17,4 @@ pub enum Command {
     ToggleHidden,
     ToggleDeepScan,
     ToggleDirHeightMode,
-    Select(usize),
-    ClearSelection,
 }
