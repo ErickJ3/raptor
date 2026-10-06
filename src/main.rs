@@ -7,6 +7,7 @@ mod filesystem;
 mod input;
 mod math;
 mod render;
+mod search;
 
 use app::AppState;
 use input::KeyboardHandler;
@@ -29,7 +30,8 @@ async fn main() {
     let mut state = AppState::new();
 
     loop {
-        let commands = KeyboardHandler::poll_commands();
+        let commands =
+            KeyboardHandler::poll_commands(state.search.active, &mut state.pending_g);
         for command in commands {
             state.execute_command(command);
         }

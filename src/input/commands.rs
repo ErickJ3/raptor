@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Command {
     MoveLeft,
     MoveRight,
@@ -13,8 +13,10 @@ pub enum Command {
     GoHome,
     ToggleLabels,
     ToggleHidden,
-    Select(usize),
-    ClearSelection,
-    #[cfg(target_os = "macos")]
-    OpenInFinder,
+    RevealInFileManager,
+    StartSearch,
+    SearchAppend(char),
+    SearchBackspace,
+    SearchCommit,
+    SearchCancel,
 }

@@ -1,4 +1,4 @@
-use super::{blocks, effects, grid, labels, ui};
+use super::{blocks, effects, grid, labels, search_overlay, ui};
 use crate::app::AppState;
 use crate::config;
 use macroquad::prelude::*;
@@ -15,6 +15,7 @@ pub fn render_frame(state: &AppState) {
         &state.navigator.entries,
         state.selected,
         state.mouse.hover_index,
+        state.search.match_set(),
     );
     state.scan_effect.draw();
 
@@ -31,8 +32,38 @@ pub fn render_frame(state: &AppState) {
 
     render_ui(state);
 
+    if state.navigator.is_loading() {
+        draw_loading_overlay(state.navigator.loading_elapsed_secs());
+    }
+
+    if state.search.active {
+        search_overlay::draw(&state.search);
+    }
+
     effects::draw_scanlines();
     effects::draw_vignette();
+}
+
+fn draw_loading_overlay(elapsed: f32) {
+    let dots = ".".repeat(((elapsed * 3.0) as usize % 4) + 1);
+    let text = format!("SCANNING{}", dots);
+    let size = measure_text(&text, None, 28, 1.0);
+    let cx = screen_width() / 2.0;
+    let cy = screen_height() / 2.0;
+    draw_rectangle(
+        cx - size.width / 2.0 - 16.0,
+        cy - size.height - 8.0,
+        size.width + 32.0,
+        size.height + 16.0,
+        Color::new(0.0, 0.05, 0.0, 0.85),
+    );
+    draw_text(
+        &text,
+        cx - size.width / 2.0,
+        cy,
+        28.0,
+        config::TEXT_PRIMARY,
+    );
 }
 
 fn render_ui(state: &AppState) {

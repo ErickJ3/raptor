@@ -1,5 +1,19 @@
-use super::{loader, node::FileNode};
+use super::{
+    loader::{self, DirectoryContents},
+    node::FileNode,
+};
 use std::path::PathBuf;
+use std::sync::mpsc::{Receiver, TryRecvError, channel};
+use std::thread;
+use std::time::Instant;
+
+pub enum LoadState {
+    Idle,
+    Loading {
+        rx: Receiver<std::io::Result<DirectoryContents>>,
+        started_at: Instant,
+    },
+}
 
 pub struct Navigator {
     pub current_path: PathBuf,
@@ -7,6 +21,7 @@ pub struct Navigator {
     pub grid_width: i32,
     pub history: Vec<PathBuf>,
     pub show_hidden: bool,
+    pub load_state: LoadState,
 }
 
 impl Navigator {
@@ -17,6 +32,7 @@ impl Navigator {
             grid_width: 1,
             history: vec![],
             show_hidden: false,
+            load_state: LoadState::Idle,
         };
         nav.load(&initial_path);
         nav
@@ -25,10 +41,48 @@ impl Navigator {
     pub fn load(&mut self, path: &PathBuf) {
         self.current_path = path.clone();
         self.entries.clear();
+        self.grid_width = 1;
 
-        if let Ok(contents) = loader::load_directory(path, self.show_hidden) {
+        let (tx, rx) = channel();
+        let path_clone = path.clone();
+        let show_hidden = self.show_hidden;
+        thread::spawn(move || {
+            let result = loader::load_directory(&path_clone, show_hidden);
+            let _ = tx.send(result);
+        });
+        self.load_state = LoadState::Loading {
+            rx,
+            started_at: Instant::now(),
+        };
+    }
+
+    pub fn poll(&mut self) {
+        let result = match &self.load_state {
+            LoadState::Loading { rx, .. } => match rx.try_recv() {
+                Ok(r) => r,
+                Err(TryRecvError::Empty) => return,
+                Err(TryRecvError::Disconnected) => {
+                    self.load_state = LoadState::Idle;
+                    return;
+                }
+            },
+            LoadState::Idle => return,
+        };
+        self.load_state = LoadState::Idle;
+        if let Ok(contents) = result {
             self.entries = contents.nodes;
             self.grid_width = contents.grid_width;
+        }
+    }
+
+    pub fn is_loading(&self) -> bool {
+        matches!(self.load_state, LoadState::Loading { .. })
+    }
+
+    pub fn loading_elapsed_secs(&self) -> f32 {
+        match &self.load_state {
+            LoadState::Loading { started_at, .. } => started_at.elapsed().as_secs_f32(),
+            LoadState::Idle => 0.0,
         }
     }
 
@@ -89,10 +143,6 @@ impl Navigator {
 
     pub fn has_parent(&self) -> bool {
         self.current_path.parent().is_some()
-    }
-
-    pub fn find_node_at_grid_pos(&self, pos: (i32, i32)) -> Option<usize> {
-        self.entries.iter().position(|n| n.grid_pos == pos)
     }
 
     pub fn grid_height(&self) -> i32 {

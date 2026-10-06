@@ -49,11 +49,17 @@ impl FileNode {
     }
 
     pub fn display_name(&self, max_length: usize) -> String {
-        if self.name.len() > max_length {
-            format!("{}...", &self.name[..max_length.saturating_sub(3)])
-        } else {
-            self.name.clone()
+        if self.name.chars().count() <= max_length {
+            return self.name.clone();
         }
+        let cutoff = max_length.saturating_sub(3);
+        let end = self
+            .name
+            .char_indices()
+            .nth(cutoff)
+            .map(|(i, _)| i)
+            .unwrap_or(self.name.len());
+        format!("{}...", &self.name[..end])
     }
 
     pub fn size_display(&self) -> String {

@@ -1,11 +1,12 @@
 use macroquad::prelude::*;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::camera::CameraController;
 use crate::config;
 use crate::filesystem::Navigator;
 use crate::input::{Command, MouseState};
 use crate::render::ScanEffect;
+use crate::search::SearchState;
 
 pub struct AppState {
     pub navigator: Navigator,
@@ -15,6 +16,8 @@ pub struct AppState {
     pub selected: Option<usize>,
     pub show_labels: bool,
     pub show_hidden: bool,
+    pub search: SearchState,
+    pub pending_g: bool,
 }
 
 impl AppState {
@@ -28,10 +31,13 @@ impl AppState {
             selected: None,
             show_labels: true,
             show_hidden: false,
+            search: SearchState::new(),
+            pending_g: false,
         }
     }
 
     pub fn update(&mut self) {
+        self.navigator.poll();
         self.camera.update();
 
         let camera3d = self.camera.to_camera3d();
@@ -77,10 +83,21 @@ impl AppState {
             }
 
             Command::EnterDirectory => {
-                if let Some(idx) = self.selected
-                    && self.navigator.enter_directory(idx)
-                {
-                    self.on_directory_changed();
+                if let Some(idx) = self.selected {
+                    let is_dir = self
+                        .navigator
+                        .entries
+                        .get(idx)
+                        .map(|n| n.is_dir)
+                        .unwrap_or(false);
+                    if is_dir {
+                        if self.navigator.enter_directory(idx) {
+                            self.on_directory_changed();
+                        }
+                    } else if let Some(node) = self.navigator.entries.get(idx) {
+                        let path = node.path.clone();
+                        open_with_default(&path);
+                    }
                 }
             }
 
@@ -108,7 +125,9 @@ impl AppState {
 
             Command::ToggleHidden => {
                 self.navigator.show_hidden = !self.navigator.show_hidden;
-                self.navigator.load(&self.navigator.current_path.clone());
+                self.show_hidden = self.navigator.show_hidden;
+                let path = self.navigator.current_path.clone();
+                self.navigator.load(&path);
                 self.on_directory_changed();
             }
 
@@ -116,31 +135,47 @@ impl AppState {
                 self.show_labels = !self.show_labels;
             }
 
-            #[cfg(target_os = "macos")]
-            Command::OpenInFinder => {
-                if let Some(idx) = self.selected {
-                    if let Some(entry) = self.navigator.entries.get(idx) {
-                        let path = self.navigator.current_path.join(&entry.name);
-                        // Use 'open -R' to reveal the file/folder in Finder
-                        std::process::Command::new("open")
-                            .arg("-R")
-                            .arg(&path)
-                            .spawn()
-                            .ok();
-                    }
+            Command::RevealInFileManager => {
+                if let Some(idx) = self.selected
+                    && let Some(node) = self.navigator.entries.get(idx)
+                {
+                    reveal_in_file_manager(&node.path);
                 }
             }
 
-            Command::Select(idx) => {
-                if idx < self.navigator.entries.len() {
-                    self.selected = Some(idx);
+            Command::StartSearch => {
+                self.search.start();
+            }
+
+            Command::SearchAppend(c) => {
+                self.search.append(c);
+                self.update_search_results();
+            }
+
+            Command::SearchBackspace => {
+                self.search.backspace();
+                self.update_search_results();
+            }
+
+            Command::SearchCommit => {
+                if let Some(&first) = self.search.matches.first() {
+                    self.selected = Some(first);
                     self.focus_camera_on_selection();
                 }
+                self.search.cancel();
             }
 
-            Command::ClearSelection => {
-                self.selected = None;
+            Command::SearchCancel => {
+                self.search.cancel();
             }
+        }
+    }
+
+    fn update_search_results(&mut self) {
+        self.search.recompute(&self.navigator.entries);
+        if let Some(&first) = self.search.matches.first() {
+            self.selected = Some(first);
+            self.focus_camera_on_selection();
         }
     }
 
@@ -159,62 +194,50 @@ impl AppState {
         let current_node = &self.navigator.entries[current_idx];
         let (cx, cz) = current_node.grid_pos;
 
-        // Calculate camera-relative direction vector
         let camera_yaw = self.camera.yaw;
         let dx_f = dx as f32;
         let dz_f = dz as f32;
         let sin_yaw = camera_yaw.sin();
         let cos_yaw = camera_yaw.cos();
-        
-        // Transform to world space
+
         let world_dx = dx_f * sin_yaw + dz_f * cos_yaw;
         let world_dz = -dx_f * cos_yaw + dz_f * sin_yaw;
-        
-        // Normalize direction
+
         let dir_len = (world_dx * world_dx + world_dz * world_dz).sqrt();
         if dir_len < 0.001 {
             return;
         }
         let norm_dx = world_dx / dir_len;
         let norm_dz = world_dz / dir_len;
-        
-        // Find the best candidate block in this direction
+
         let mut best_idx: Option<usize> = None;
         let mut best_score = f32::MAX;
-        
+
         for (i, node) in self.navigator.entries.iter().enumerate() {
             if i == current_idx {
                 continue;
             }
-            
+
             let (nx, nz) = node.grid_pos;
             let delta_x = (nx - cx) as f32;
             let delta_z = (nz - cz) as f32;
-            
-            // Calculate dot product to see if block is in the right direction
+
             let dot = delta_x * norm_dx + delta_z * norm_dz;
-            
-            // Only consider blocks that are in front of us (even slightly)
+
             if dot <= 0.0 {
                 continue;
             }
-            
-            // Calculate distance to the block
+
             let dist = (delta_x * delta_x + delta_z * delta_z).sqrt();
-            
-            // Calculate perpendicular distance from the intended direction
             let perp_dist = ((delta_x * norm_dz - delta_z * norm_dx).abs()).max(0.01);
-            
-            // Score: prioritize blocks that are closer and more aligned
-            // Use both forward progress (dot) and perpendicular offset (perp_dist)
             let score = dist + perp_dist * 2.0 - dot * 0.5;
-            
+
             if score < best_score {
                 best_score = score;
                 best_idx = Some(i);
             }
         }
-        
+
         if let Some(new_idx) = best_idx {
             self.selected = Some(new_idx);
             self.focus_camera_on_selection();
@@ -237,11 +260,44 @@ impl AppState {
         self.selected = None;
         self.scan_effect.reset();
         self.camera.reset_target();
+        self.search.cancel();
     }
 }
 
 impl Default for AppState {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+fn open_with_default(path: &Path) {
+    #[cfg(target_os = "linux")]
+    let prog = "xdg-open";
+    #[cfg(target_os = "macos")]
+    let prog = "open";
+    #[cfg(target_os = "windows")]
+    let prog = "explorer";
+
+    std::process::Command::new(prog).arg(path).spawn().ok();
+}
+
+fn reveal_in_file_manager(path: &Path) {
+    #[cfg(target_os = "linux")]
+    {
+        let target = path.parent().unwrap_or(path);
+        std::process::Command::new("xdg-open").arg(target).spawn().ok();
+    }
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg("-R")
+            .arg(path)
+            .spawn()
+            .ok();
+    }
+    #[cfg(target_os = "windows")]
+    {
+        let arg = format!("/select,{}", path.display());
+        std::process::Command::new("explorer").arg(arg).spawn().ok();
     }
 }
